@@ -1,0 +1,5 @@
+com\mycompany\btap_lan1\resources\JakartaEE11Resource.class
+murach\business\User.class
+murach\email\EmailListServlet.class
+murach\data\UserDB.class
+com\mycompany\btap_lan1\JakartaRestConfiguration.class
