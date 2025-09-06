@@ -1,0 +1,68 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.mycompany</groupId>
+  <artifactId>btap2_ch09</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>war</packaging>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>17</maven.compiler.release>
+    <servlet.version>6.0.0</servlet.version>
+    <jstl.api.version>3.0.0</jstl.api.version>
+    <jstl.impl.version>3.0.1</jstl.impl.version>
+  </properties>
+
+  <dependencies>
+    <!-- Servlet API do Tomcat cung cấp lúc chạy -->
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>${servlet.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- JSTL Jakarta 3.x: PHẢI được đóng gói vào WAR -->
+    <dependency>
+      <groupId>jakarta.servlet.jsp.jstl</groupId>
+      <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+      <version>${jstl.api.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.web</groupId>
+      <artifactId>jakarta.servlet.jsp.jstl</artifactId> <!-- implementation -->
+      <version>${jstl.impl.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <!-- Nếu bạn dùng layout không chuẩn (ví dụ mã nguồn ở src/java), thêm:
+         <sourceDirectory>src/java</sourceDirectory>
+    -->
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.12.1</version>
+        <configuration>
+          <release>${maven.compiler.release}</release>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>3.4.0</version>
+        <configuration>
+          <failOnMissingWebXml>false</failOnMissingWebXml>
+          <!-- Nếu web root là 'web', bỏ comment dòng dưới:
+          <warSourceDirectory>web</warSourceDirectory>
+          -->
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
