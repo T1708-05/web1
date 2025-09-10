@@ -1,0 +1,7 @@
+murach\tags\IfWeekdayTag.class
+murach\web\EmailListServlet.class
+murach\tags\CurrentTimeTag.class
+murach\tags\IfEmptyMarkTag.class
+murach\data\UserDB.class
+murach\model\User.class
+murach\tags\CurrentDateTag.class
