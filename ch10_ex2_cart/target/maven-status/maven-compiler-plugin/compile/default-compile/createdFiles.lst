@@ -1,0 +1,8 @@
+murach\business\Product.class
+murach\cart\ProductsServlet.class
+murach\tags\ProductsTag.class
+murach\business\Cart.class
+murach\cart\CartServlet.class
+murach\tags\CartTag.class
+murach\business\LineItem.class
+murach\data\ProductIO.class
