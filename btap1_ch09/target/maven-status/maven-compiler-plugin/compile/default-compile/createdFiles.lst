@@ -1,4 +1,4 @@
+murach\util\CookieUtil.class
 murach\business\User.class
-murach\download\DownloadItem.class
-murach\download\FileServlet.class
+murach\data\UserIO.class
 murach\download\DownloadServlet.class

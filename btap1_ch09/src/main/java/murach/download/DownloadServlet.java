@@ -1,118 +1,149 @@
 package murach.download;
 
+import java.io.*;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
+
 import murach.business.User;
-
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import murach.data.UserIO;
+import murach.util.CookieUtil;
 
 public class DownloadServlet extends HttpServlet {
 
-    @SuppressWarnings("unchecked")
-    private void ensureCatalog(ServletContext sc) {
-        List<DownloadItem> items = (List<DownloadItem>) sc.getAttribute("downloads");
-        if (items == null) {
-            items = new java.util.ArrayList<>();
-            items.add(new DownloadItem("adamn", "ADAMN", "ADAMN.mp3"));
-            items.add(new DownloadItem("caooc20", "Cao Ốc 20", "Cao Ốc 20.mp3"));
-            items.add(new DownloadItem("muathangsau", "Mưa Tháng Sáu", "Mưa Tháng Sáu.mp3"));
-            items.add(new DownloadItem("noitinhyeuketthuc", "Nơi Tình Yêu Kết Thúc", "Nơi Tình Yêu Kết Thúc.mp3"));
-            items.add(new DownloadItem("tranghoamaymua", "Trắng Hoa Mây Mưa", "Trắng Hoa Mây Mưa.mp3"));
-            sc.setAttribute("downloads", items);
+    @Override
+    public void doGet(HttpServletRequest request,
+            HttpServletResponse response)
+            throws IOException, ServletException {
+
+        // get current action
+        String action = request.getParameter("action");
+        if (action == null) {
+            action = "viewAlbums";  // default action
         }
+
+        // perform action and set URL to appropriate page
+        String url = "/index.jsp";
+        if (action.equals("viewAlbums")) {
+            url = "/index.jsp";
+        } else if (action.equals("checkUser")) {
+            url = checkUser(request, response);
+        } else if (action.equals("viewCookies")) {
+            url = "/view_cookies.jsp";
+        } else if (action.equals("deleteCookies")) {
+            url = deleteCookies(request, response);
+        }
+
+        // forward to the view
+        getServletContext()
+                .getRequestDispatcher(url)
+                .forward(request, response);
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+    public void doPost(HttpServletRequest request,
+            HttpServletResponse response)
+            throws IOException, ServletException {
 
-        ServletContext sc = getServletContext();
-        ensureCatalog(sc);
-
-        String action = req.getParameter("action");
-        if (action == null) action = "index";
-
-        switch (action) {
-            case "register":
-                sc.getRequestDispatcher("/register.jsp").forward(req, resp);
-                break;
-
-            case "viewCookies":
-                sc.getRequestDispatcher("/view_cookies.jsp").forward(req, resp);
-                break;
-
-            case "deleteCookies":
-                deleteCookies(req, resp);
-                break;
-
-            case "download":
-                sc.getRequestDispatcher("/download.jsp").forward(req, resp);
-                break;
-
-            default: // index
-                sc.getRequestDispatcher("/index.jsp").forward(req, resp);
+        String action = request.getParameter("action");
+        
+        // perform action and set URL to appropriate page
+        String url = "/index.jsp";
+        if (action.equals("registerUser")) {
+            url = registerUser(request, response);
         }
+
+        // forward to the view
+        getServletContext()
+                .getRequestDispatcher(url)
+                .forward(request, response);
     }
 
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
-        String action = req.getParameter("action");
-        if ("saveRegistration".equals(action)) {
-            saveRegistration(req, resp);
-        } else {
-            doGet(req, resp);
-        }
-    }
+    private String checkUser(HttpServletRequest request,
+            HttpServletResponse response) {
 
-    private void saveRegistration(HttpServletRequest req, HttpServletResponse resp)
-            throws IOException {
-        String firstName = req.getParameter("firstName");
-        String lastName  = req.getParameter("lastName");
-        String email     = req.getParameter("email");
+        String productCode = request.getParameter("productCode");
+        HttpSession session = request.getSession();
+        session.setAttribute("productCode", productCode);
+        User user = (User) session.getAttribute("user");
 
-        // Lưu user vào session
-        User user = new User(firstName, lastName, email);
-        req.getSession().setAttribute("user", user);
+        String url;
+        // if User object doesn't exist, check email cookie
+        if (user == null) {
+            Cookie[] cookies = request.getCookies();
+            String emailAddress = 
+                CookieUtil.getCookieValue(cookies, "emailCookie");
 
-        // Tạo cookie (2 năm)
-        int twoYears = 60 * 60 * 24 * 365 * 2;
-        String ctx = req.getContextPath();
-
-        Cookie fn = new Cookie("firstName", firstName == null ? "" : firstName);
-        Cookie em = new Cookie("email", email == null ? "" : email);
-        fn.setMaxAge(twoYears); em.setMaxAge(twoYears);
-        fn.setPath(ctx); em.setPath(ctx);
-        resp.addCookie(fn); resp.addCookie(em);
-
-        // Quay lại đúng trang (PRG)
-        String backCode = req.getParameter("code"); // nếu đăng ký khi vào trang download
-        if (backCode != null && !backCode.isBlank()) {
-            resp.sendRedirect(ctx + "/download?action=download&code=" + backCode);
-        } else {
-            resp.sendRedirect(ctx + "/download?action=index");
-        }
-    }
-
-    private void deleteCookies(HttpServletRequest req, HttpServletResponse resp)
-            throws IOException {
-        Cookie[] cookies = req.getCookies();
-        if (cookies != null) {
-            for (Cookie c : cookies) {
-                if ("firstName".equals(c.getName()) || "email".equals(c.getName())) {
-                    c.setMaxAge(0);
-                    c.setPath(req.getContextPath());
-                    resp.addCookie(c);
-                }
+            // if cookie doesn't exist, go to Registration page
+            if (emailAddress == null || emailAddress.equals("")) {
+                url = "/register.jsp";
+            } 
+            // if cookie exists, create User object and go to Downloads page
+            else {
+                ServletContext sc = getServletContext();
+                String path = sc.getRealPath("/WEB-INF/EmailList.txt");
+                user = UserIO.getUser(emailAddress, path);
+                session.setAttribute("user", user);
+                url = "/" + productCode + "_download.jsp";
             }
+        } 
+        // if User object exists, go to Downloads page
+        else {
+            url = "/" + productCode + "_download.jsp";
         }
-        resp.sendRedirect(req.getContextPath() + "/download?action=index");
+        return url;
+    }
+
+    private String registerUser(HttpServletRequest request,
+            HttpServletResponse response) {
+
+        // get the user data
+        String email = request.getParameter("email");
+        String firstName = request.getParameter("firstName");
+        String lastName = request.getParameter("lastName");
+
+        // store the data in a User object
+        User user = new User();
+        user.setEmail(email);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+
+        // write the User object to a file
+        ServletContext sc = getServletContext();
+        String path = sc.getRealPath("/WEB-INF/EmailList.txt");
+        UserIO.add(user, path);
+
+        // store the User object as a session attribute
+        HttpSession session = request.getSession();
+        session.setAttribute("user", user);
+
+        // add a cookie that stores the user's email as a cookie
+        Cookie c1 = new Cookie("emailCookie", email);
+        c1.setMaxAge(60 * 60 * 24 * 365 * 2); // set age to 2 years
+        c1.setPath("/");                      // allow entire app to access it
+        response.addCookie(c1);
+
+        // add a cookie that stores the user's as a cookie
+        Cookie c2 = new Cookie("firstNameCookie", firstName);
+        c2.setMaxAge(60 * 60 * 24 * 365 * 2); // set age to 2 years
+        c2.setPath("/");                      // allow entire app to access it
+        response.addCookie(c2);
+
+        // create and return a URL for the appropriate Download page
+        String productCode = (String) session.getAttribute("productCode");
+        String url = "/" + productCode + "_download.jsp";
+        return url;
+    }
+
+    private String deleteCookies(HttpServletRequest request,
+            HttpServletResponse response) {
+
+        Cookie[] cookies = request.getCookies();
+        for (Cookie cookie : cookies) {
+            cookie.setMaxAge(0); //delete the cookie
+            cookie.setPath("/"); //allow the download application to access it
+            response.addCookie(cookie);
+        }
+        String url = "/delete_cookies.jsp";
+        return url;
     }
 }
